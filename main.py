@@ -5,9 +5,6 @@ import json
 from collections import defaultdict
 import datetime
 
-# Global dictionary to keep track of users' upload sessions
-upload_sessions = {}
-
 TOKEN = '6185441992:AAGmIyIEPIQ3JZudGCW19TlFp5yhvGdc5gA'
 bot = telebot.TeleBot(TOKEN)
 
@@ -198,7 +195,6 @@ def handle_command(call):
     elif command == "upload":
         upload_file(call.message)
     elif command == "files":
-        list_user_files(user_id)
         response = list_user_files(user_id)
         bot.send_message(chat_id, response)
     elif command == "download":
@@ -240,7 +236,7 @@ def file_to_tag_selected(call):
     msg = f"You selected {file_name}. Please enter the tags now (use spaces to separate multiple tags):"
     bot.send_message(call.message.chat.id, msg)
     # Store the file name temporarily to associate with the user's next message
-    bot.register_next_step_handler_by_chat_id(call.message.chat.id, tag_input_received, file_name, call.from_user.id)
+    bot.register_next_step_handler(call.message, tag_input_received, file_name, call.from_user.id)
 
 def tag_input_received(message, file_name, user_id):
     tags = message.text.split()  # Split tags by spaces, including emojis
