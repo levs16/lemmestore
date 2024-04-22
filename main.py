@@ -3,9 +3,8 @@ from telebot import types
 import os
 import json
 from collections import defaultdict
-import datetime
 
-TOKEN = '6913450772:AAF06rCz9fqZyAaoacbqqsMXtnTAsXH35Bk'
+TOKEN = 'token'
 bot = telebot.TeleBot(TOKEN)
 
 # Ensure the directory for storing files exists
