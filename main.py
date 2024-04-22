@@ -5,7 +5,7 @@ import json
 from collections import defaultdict
 import datetime
 
-TOKEN = '6185441992:AAGmIyIEPIQ3JZudGCW19TlFp5yhvGdc5gA'
+TOKEN = '6913450772:AAF06rCz9fqZyAaoacbqqsMXtnTAsXH35Bk'
 bot = telebot.TeleBot(TOKEN)
 
 # Ensure the directory for storing files exists
