@@ -4,17 +4,13 @@ import os
 import json
 from collections import defaultdict
 
-TOKEN = 'token'
+TOKEN = '6185441992:AAGmIyIEPIQ3JZudGCW19TlFp5yhvGdc5gA'
 bot = telebot.TeleBot(TOKEN)
 
 # Ensure the directory for storing files exists
 if not os.path.exists("user_files"):
     os.makedirs("user_files")
 
-# Ensure the user data file exists
-if not os.path.exists(".user_data.json"):
-    with open(".user_data.json", "w") as f:
-        json.dump({}, f)
 
 def get_user_storage_info(user_id):
     user_folder = f"user_files/{user_id}"
@@ -56,7 +52,7 @@ def generate_tree(root_dir):
         for dirname in dirnames:
             subtree[dirname] = {}
         for filename in filenames:
-            if filename != ".metadata.json":  # Exclude metadata file from the tree
+            if not(filename.startswith(".")):  # Exclude files starting with "." from the tree
                 subtree[filename] = None
 
     return tree
@@ -182,12 +178,27 @@ def main_panel(message):
         markup.add(types.InlineKeyboardButton(description, callback_data="panel_" + command.replace("/", "")))
     bot.send_message(message.chat.id, panel_summary, reply_markup=markup)
 
+@bot.callback_query_handler(func=lambda call: call.data.startswith("inittag_"))
+def file_to_tag_selected(call):
+    file_name = call.data[len("inittag_"):]
+
+    if file_name.startswith(".metadata"):
+        bot.send_message(call.message.chat.id, "This file cannot be tagged. 🚫")
+        return
+
+    msg = f"You selected {file_name}. Please enter the tags now (use spaces to separate multiple tags):"
+    bot.send_message(call.message.chat.id, msg)
+
+    # Wait for the user to enter tags and then process them
+    bot.register_next_step_handler_by_chat_id(call.message.chat.id, tag_input_received, file_name, call.from_user.id)
+
 @bot.callback_query_handler(func=lambda call: True)
 def handle_command(call):
     bot.answer_callback_query(call.id)
     command = call.data.replace("panel_", "")
     user_id = call.from_user.id
     chat_id = call.message.chat.id
+    print(command)
 
     if command == "start":
         send_welcome(call.message)
@@ -198,7 +209,7 @@ def handle_command(call):
         bot.send_message(chat_id, response)
     elif command == "download":
         list_downloadable_files(user_id, chat_id)
-    elif command == "tag":
+    elif command.startswith("tag"):
         list_taggable_files(user_id, chat_id)
     elif command == "help":
         send_help(call.message)
@@ -220,39 +231,45 @@ def list_taggable_files(user_id, chat_id):
     else:
         bot.send_message(chat_id, "You have no files to tag. 🚫")
 
+@bot.callback_query_handler(func=lambda call: call.data.startswith("tag_"))
+def file_to_tag_selected(call):
+    file_name = call.data[len("tag_"):]
+
+    if file_name.startswith(".metadata"):
+        bot.answer_callback_query(call.id, "This file cannot be tagged. 🚫")
+        return
+
+    msg = f"You selected {file_name}. Please enter the tags now (use spaces to separate multiple tags):"
+    bot.send_message(call.message.chat.id, msg)
+
+    # Wait for the user to enter tags and then process them
+    bot.register_next_step_handler(call.message, tag_input_received, file_name, call.from_user.id)
+
 @bot.message_handler(commands=['tag'])
 def tag_file_init(message):
     user_id = message.from_user.id
     chat_id = message.chat.id
     list_taggable_files(user_id, chat_id)
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("tag_"))
-def file_to_tag_selected(call):
-    file_name = call.data[len("tag_"):]
-    if file_name.startswith(".metadata"):
-        bot.send_message(call.message.chat.id, "This file cannot be tagged. 🚫")
-        return
-    msg = f"You selected {file_name}. Please enter the tags now (use spaces to separate multiple tags):"
-    bot.send_message(call.message.chat.id, msg)
-    # Store the file name temporarily to associate with the user's next message
-    bot.register_next_step_handler(call.message, tag_input_received, file_name, call.from_user.id)
-
 def tag_input_received(message, file_name, user_id):
-    tags = message.text.split()  # Split tags by spaces, including emojis
+    tags = message.text.split()  # Assuming tags are space-separated
     user_folder = f"user_files/{user_id}"
     metadata_path = os.path.join(user_folder, ".metadata.json")
-    if os.path.exists(metadata_path):
-        with open(metadata_path, "r") as f:
-            metadata = json.load(f)
-        if file_name in metadata:
-            metadata[file_name]["tags"] = tags
-            with open(metadata_path, "w") as f:
-                json.dump(metadata, f)
-            bot.reply_to(message, f"Tags {', '.join(tags)} have been added to {file_name}. 🏷️")
-        else:
-            bot.reply_to(message, "File not found. 🚫")
-    else:
-        bot.reply_to(message, "Metadata file not found. 🚫")
+
+    # Check if the metadata file exists, if not, create an empty one
+    if not os.path.exists(metadata_path):
+        with open(metadata_path, 'w') as f:
+            json.dump({}, f)  # Create an empty JSON dictionary
+
+    # Now open the metadata file to update it
+    with open(metadata_path, 'r+') as f:
+        metadata = json.load(f)
+        metadata[file_name] = {"tags": tags}  # Add or update the file's tags
+        f.seek(0)  # Move to the start of the file before writing
+        json.dump(metadata, f)
+        f.truncate()  # Truncate file to remove any leftover data
+
+    bot.reply_to(message, f"Tags {', '.join(tags)} have been added to {file_name}. 🏷️")
 
 @bot.message_handler(commands=['help'])
 def send_help(message):
