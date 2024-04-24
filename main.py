@@ -1,10 +1,17 @@
+##################################################################################################
+# Bot written by: levs16(bot-side + bug fixing), yes(file management(backend) + Q.Q. + advising) #
+# First written on: 06:21 PM 04/18/2024, last edited on: 12:46 AM 04/25/2024                     #
+#                                                                                                #
+# -Fully open-source-                                                                            # 
+##| CC: levs16, yes |#############################################################################  
+
 import telebot
 from telebot import types
 import os
 import json
 from collections import defaultdict
 
-TOKEN = '6185441992:AAGmIyIEPIQ3JZudGCW19TlFp5yhvGdc5gA'
+TOKEN = 'token-here'
 bot = telebot.TeleBot(TOKEN)
 
 # Ensure the directory for storing files exists
