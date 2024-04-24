@@ -1,9 +1,10 @@
 ##################################################################################################
 # Bot written by: levs16(bot-side + bug fixing), yes(file management(backend) + Q.Q. + advising) #
-# First written on: 06:21 PM 04/18/2024, last edited on: 12:46 AM 04/25/2024                     #
+# First written on: 06:21 PM 04/18/2024, last edited on: 1:13 AM 04/25/2024                     #
 #                                                                                                #
 # -Fully open-source-                                                                            # 
 ##| CC: levs16, yes |#############################################################################  
+
 
 import telebot
 from telebot import types
@@ -231,26 +232,12 @@ def list_taggable_files(user_id, chat_id):
         if files:
             markup = types.InlineKeyboardMarkup()
             for file_name in files:
-                markup.add(types.InlineKeyboardButton(file_name, callback_data=f"tag_{file_name}"))
+                markup.add(types.InlineKeyboardButton(file_name, callback_data=f"inittag_{file_name}"))
             bot.send_message(chat_id, "Select the file you want to tag:", reply_markup=markup)
         else:
             bot.send_message(chat_id, "You have no files to tag. 🚫")
     else:
         bot.send_message(chat_id, "You have no files to tag. 🚫")
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("tag_"))
-def file_to_tag_selected(call):
-    file_name = call.data[len("tag_"):]
-
-    if file_name.startswith(".metadata"):
-        bot.answer_callback_query(call.id, "This file cannot be tagged. 🚫")
-        return
-
-    msg = f"You selected {file_name}. Please enter the tags now (use spaces to separate multiple tags):"
-    bot.send_message(call.message.chat.id, msg)
-
-    # Wait for the user to enter tags and then process them
-    bot.register_next_step_handler(call.message, tag_input_received, file_name, call.from_user.id)
 
 @bot.message_handler(commands=['tag'])
 def tag_file_init(message):
